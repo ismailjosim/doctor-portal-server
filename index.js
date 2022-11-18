@@ -32,6 +32,7 @@ dbConnect()
 // todo Database Collection
 const AppointmentCollection = client.db('doctorsPortal').collection('appointmentOptions');
 const bookingsCollection = client.db('doctorsPortal').collection('bookings');
+const usersCollection = client.db('doctorsPortal').collection('users');
 
 
 // TODO run server
@@ -124,7 +125,67 @@ app.post('/bookings', async (req, res) => {
 })
 
 
+// todo: Get all bookings data for specific user based on email
+app.get('/bookings', async (req, res) => {
+    try {
+        const email = req.query.email;
+        const query = { email: email }
+        const bookings = await bookingsCollection.find(query).toArray();
+        res.send({
+            success: true,
+            bookings: bookings
+        })
+    } catch (error) {
+        res.send({
+            success: false,
+            options: options
+        })
+    }
+})
 
+// todo => Save user info from Client Side
+app.post('/users', async (req, res) => {
+    try {
+        const user = req.body;
+        // console.log(user);
+
+        const users = await usersCollection.insertOne(user)
+        res.send({
+            success: true,
+            users: users
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+
+// Header: JWT Token To verify User
+app.get('/jwt', async (req, res) => {
+    try {
+        const email = req.query.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        console.log(user);
+
+        if (user) {
+            res.send({
+                success: true,
+                user: user
+            })
+        }
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
 
 
 
