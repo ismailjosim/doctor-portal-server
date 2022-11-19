@@ -57,6 +57,7 @@ dbConnect()
 const AppointmentCollection = client.db('doctorsPortal').collection('appointmentOptions');
 const bookingsCollection = client.db('doctorsPortal').collection('bookings');
 const usersCollection = client.db('doctorsPortal').collection('users');
+const doctorCollection = client.db('doctorsPortal').collection('doctors');
 
 
 // TODO run server
@@ -171,10 +172,12 @@ app.get('/bookings', verifyJWT, async (req, res) => {
             bookings: bookings
         })
     } catch (error) {
+
         res.send({
             success: false,
-            options: options
+            error: error.message
         })
+
     }
 })
 
@@ -301,6 +304,65 @@ app.get('/users/admin/:email', async (req, res) => {
         })
     }
 
+})
+
+// Link: Prevent accessing Admin route via URL
+app.get('/appointmentSpecialty', async (req, res) => {
+    try {
+        const query = {}
+        const specialty = await AppointmentCollection.find(query).project({ name: 1 }).toArray()
+        res.send({
+            success: true,
+            specialty: specialty
+
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+
+// save doctor info to database
+app.post('/doctors', async (req, res) => {
+    try {
+        const doctor = req.body;
+        const doctors = await doctorCollection.insertOne(doctor)
+
+        res.send({
+            success: true,
+            doctors: doctors
+
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+app.get('/doctors', async (req, res) => {
+    try {
+        const query = {};
+        const doctors = await doctorCollection.find(query).toArray()
+
+        res.send({
+            success: true,
+            doctors: doctors
+
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
 })
 
 
