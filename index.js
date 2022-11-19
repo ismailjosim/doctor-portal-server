@@ -2,7 +2,7 @@ require('dotenv').config();
 require('colors');
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 
 const app = express();
@@ -226,12 +226,81 @@ app.get('/jwt', async (req, res) => {
 
 // header: get all users data
 app.get('/users', async (req, res) => {
-    const query = {}
-    const users = await usersCollection.find(query).toArray();
-    res.send({
-        success: true,
-        users: users
-    })
+    try {
+
+        const query = {}
+        const users = await usersCollection.find(query).toArray();
+        res.send({
+            success: true,
+            users: users
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+
+})
+
+
+// header: update user details forbid user to access admin panel if the user isn't admin
+app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+
+    try {
+        const decodedEmail = req.decoded.email;
+
+        const query = { email: decodedEmail }
+        const user = await usersCollection.findOne(query);
+
+        if (user.role !== 'admin') {
+            return res.status(403).send({ message: "Forbidden access" })
+        }
+
+
+
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const options = { upsert: true };
+        const updateDoc = {
+            $set: {
+                role: 'admin'
+            }
+        }
+        const admin = await usersCollection.updateOne(filter, updateDoc, options)
+
+        res.send({
+            success: true,
+            admin: admin
+        })
+
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+
+// Link: Prevent accessing Admin route via URL
+app.get('/users/admin/:email', async (req, res) => {
+    try {
+        const email = req.params.email;
+        const query = { email }
+        const user = await usersCollection.findOne(query);
+
+        res.send({ isAdmin: user?.role === 'admin' });
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+
 })
 
 
