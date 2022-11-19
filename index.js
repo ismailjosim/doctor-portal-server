@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('colors');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
 
@@ -11,12 +12,35 @@ const port = process.env.PORT || 5000;
 app.use(cors())
 app.use(express.json())
 
+// header: verifyJWT token function
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    // console.log(authHeader);
+
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized access')
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.JWT_TOKEN_SECRET, (error, decoded) => {
+        if (error) {
+            return res.status(403).send({
+                message: "forbidden access"
+            })
+        }
+        req.decoded = decoded
+        next()
+
+    })
+}
+
 
 
 const uri = `mongodb+srv://${ process.env.DB_USER }:${ process.env.DB_PASSWORD }@cluster0.s9x13go.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-// Database connect Function
+// section: Database connect Function
 const dbConnect = async () => {
     try {
         await client.connect();
@@ -90,6 +114,8 @@ app.post('/bookings', async (req, res) => {
         const booking = req.body;
         // console.log(booking);
 
+
+
         // 8. Limit one booking per user per treatment per day
         // step 01 : get appointment date from req
         const query = {
@@ -126,11 +152,20 @@ app.post('/bookings', async (req, res) => {
 
 
 // todo: Get all bookings data for specific user based on email
-app.get('/bookings', async (req, res) => {
+app.get('/bookings', verifyJWT, async (req, res) => {
     try {
         const email = req.query.email;
+        const decodedEmail = req.decoded.email;
+
+        // header: jwt token get from booking headers
+        if (email !== decodedEmail) {
+            res.status(403).send({ message: 'forbidden access' })
+        }
+
         const query = { email: email }
         const bookings = await bookingsCollection.find(query).toArray();
+
+
         res.send({
             success: true,
             bookings: bookings
@@ -169,13 +204,15 @@ app.get('/jwt', async (req, res) => {
     try {
         const email = req.query.email;
         const query = { email: email };
+
         const user = await usersCollection.findOne(query);
-        console.log(user);
 
         if (user) {
-            res.send({
+            const token = jwt.sign({ email }, process.env.JWT_TOKEN_SECRET, { expiresIn: '1d' })
+
+            return res.send({
                 success: true,
-                user: user
+                token: token
             })
         }
 
@@ -187,8 +224,15 @@ app.get('/jwt', async (req, res) => {
     }
 })
 
-
-
+// header: get all users data
+app.get('/users', async (req, res) => {
+    const query = {}
+    const users = await usersCollection.find(query).toArray();
+    res.send({
+        success: true,
+        users: users
+    })
+})
 
 
 // listen app
