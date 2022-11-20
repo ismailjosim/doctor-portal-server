@@ -37,6 +37,8 @@ const verifyJWT = (req, res, next) => {
 
 
 
+
+
 const uri = `mongodb+srv://${ process.env.DB_USER }:${ process.env.DB_PASSWORD }@cluster0.s9x13go.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -58,6 +60,33 @@ const AppointmentCollection = client.db('doctorsPortal').collection('appointment
 const bookingsCollection = client.db('doctorsPortal').collection('bookings');
 const usersCollection = client.db('doctorsPortal').collection('users');
 const doctorCollection = client.db('doctorsPortal').collection('doctors');
+
+
+
+
+// header: Make sure to use verify admin after verifyJWT
+const verifyAdmin = async (req, res, next) => {
+    try {
+        const decodedEmail = req.decoded.email;
+
+        const query = { email: decodedEmail }
+        const user = await usersCollection.findOne(query);
+
+        if (user?.role !== 'admin') {
+            return res.status(403).send({ message: "Forbidden access" })
+        }
+        next()
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+}
+
+
+
 
 
 // TODO run server
@@ -249,20 +278,9 @@ app.get('/users', async (req, res) => {
 
 
 // header: update user details forbid user to access admin panel if the user isn't admin
-app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
 
     try {
-        const decodedEmail = req.decoded.email;
-
-        const query = { email: decodedEmail }
-        const user = await usersCollection.findOne(query);
-
-        if (user.role !== 'admin') {
-            return res.status(403).send({ message: "Forbidden access" })
-        }
-
-
-
         const id = req.params.id;
         const filter = { _id: ObjectId(id) };
         const options = { upsert: true };
@@ -326,8 +344,8 @@ app.get('/appointmentSpecialty', async (req, res) => {
 })
 
 
-// save doctor info to database
-app.post('/doctors', async (req, res) => {
+// todo: save doctor info to database
+app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
     try {
         const doctor = req.body;
         const doctors = await doctorCollection.insertOne(doctor)
@@ -346,7 +364,7 @@ app.post('/doctors', async (req, res) => {
     }
 })
 
-app.get('/doctors', async (req, res) => {
+app.get('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
     try {
         const query = {};
         const doctors = await doctorCollection.find(query).toArray()
@@ -355,6 +373,25 @@ app.get('/doctors', async (req, res) => {
             success: true,
             doctors: doctors
 
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) }
+        const doctor = await doctorCollection.deleteOne(query);
+
+        res.send({
+            success: true,
+            doctor: doctor
         })
 
     } catch (error) {
