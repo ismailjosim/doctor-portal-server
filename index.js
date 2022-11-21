@@ -37,8 +37,6 @@ const verifyJWT = (req, res, next) => {
 
 
 
-
-
 const uri = `mongodb+srv://${ process.env.DB_USER }:${ process.env.DB_PASSWORD }@cluster0.s9x13go.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -89,14 +87,14 @@ const verifyAdmin = async (req, res, next) => {
 
 
 
-// TODO run server
+// TODO: General server Checking
 app.get('/', (req, res) => {
     res.send(`<div>Doctor Portal Server Connected 🎉</div>`)
 })
 
 
 
-// todo get all appointment options from database
+// TODO: get all appointment options from database
 app.get('/appOptions', async (req, res) => {
     try {
         const date = req.query.date;
@@ -210,6 +208,29 @@ app.get('/bookings', verifyJWT, async (req, res) => {
     }
 })
 
+// TODO: GET BOOKING ID
+app.get('/booking/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) }
+        const booking = await bookingsCollection.findOne(query);
+
+        res.send({
+            success: true,
+            booking: booking
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            options: options
+
+        })
+    }
+})
+
+
+
 // todo => Save user info from Client Side
 app.post('/users', async (req, res) => {
     try {
@@ -304,6 +325,20 @@ app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
         })
     }
 })
+
+// TODO: Add new Price elment to ===> Database =>
+// app.get('/addPrice', async (req, res) => {
+//     const filter = {}
+//     const options = { upsert: true }
+//     const updateDoc = {
+//         $set: {
+//             price: 500
+//         }
+//     }
+//     const result = await AppointmentCollection.updateMany(filter, updateDoc, options);
+//     res.send(result)
+// })
+
 
 
 // Link: Prevent accessing Admin route via URL
@@ -401,6 +436,10 @@ app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
         })
     }
 })
+
+
+
+
 
 
 // listen app
