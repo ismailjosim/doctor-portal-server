@@ -8,6 +8,13 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 
+// HEADER: STRIPE Payment Require
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+
+
+
+
 // middleware
 app.use(cors())
 app.use(express.json())
@@ -58,6 +65,7 @@ const AppointmentCollection = client.db('doctorsPortal').collection('appointment
 const bookingsCollection = client.db('doctorsPortal').collection('bookings');
 const usersCollection = client.db('doctorsPortal').collection('users');
 const doctorCollection = client.db('doctorsPortal').collection('doctors');
+const paymentsCollection = client.db('doctorsPortal').collection('payments');
 
 
 
@@ -228,6 +236,37 @@ app.get('/booking/:id', async (req, res) => {
         })
     }
 })
+
+// Section: create payment intent
+app.post('/create-payment-intent', async (req, res) => {
+    try {
+        const booking = req.body;
+        const price = booking.price;
+
+        const amount = price * 100;
+
+        const paymentIntent = await stripe.paymentIntents.create({
+            currency: 'usd',
+            amount: amount,
+            "payment_method_types": [
+                "card"
+            ]
+
+        })
+        res.send({
+            clientSecret: paymentIntent.client_secret,
+        });
+
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+
+        })
+    }
+})
+
 
 
 
@@ -427,6 +466,37 @@ app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
         res.send({
             success: true,
             doctor: doctor
+        })
+
+    } catch (error) {
+        res.send({
+            success: false,
+            error: error.message
+        })
+    }
+})
+
+// Header: payment
+app.post('/payments', async (req, res) => {
+    try {
+        const query = req.body
+        const result = await paymentsCollection.insertOne(query)
+        const id = query.bookingId;
+
+        const filter = { _id: ObjectId(id) }
+
+        const updateDoc = {
+            $set: {
+                paid: true,
+                transactionId: query.transactionId
+            }
+        }
+
+        const updateResult = await bookingsCollection.updateOne(filter, updateDoc)
+
+        res.send({
+            success: true,
+            payment: result,
         })
 
     } catch (error) {
