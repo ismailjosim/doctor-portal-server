@@ -300,7 +300,7 @@ app.get('/jwt', async (req, res) => {
         const user = await usersCollection.findOne(query);
 
         if (user) {
-            const token = jwt.sign({ email }, process.env.JWT_TOKEN_SECRET, { expiresIn: '1d' })
+            const token = jwt.sign({ email }, process.env.JWT_TOKEN_SECRET, { expiresIn: '7d' })
 
             return res.send({
                 success: true,
