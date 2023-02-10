@@ -217,10 +217,11 @@ app.get('/bookings', verifyJWT, async (req, res) => {
 })
 
 // Delete: appointment from url
-app.delete('/bookings/:id', verifyJWT, async (req, res) => {
+app.delete('/bookings/:id', async (req, res) => {
     try {
         const id = req.params.id;
         const query = { _id: ObjectId(id) };
+
         const booking = await bookingsCollection.deleteOne(query);
         res.send({
             status: true,
