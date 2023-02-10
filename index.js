@@ -85,7 +85,7 @@ const verifyAdmin = async (req, res, next) => {
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -131,14 +131,14 @@ app.get('/appOptions', async (req, res) => {
         })
 
         res.send({
-            status: true,
+            success: true,
             options: options
         })
 
     }
     catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -166,20 +166,20 @@ app.post('/bookings', async (req, res) => {
         if (alreadyBooked.length) {
             const message = `You already have a booking on ${ booking.appointmentDate }`;
             return res.send({
-                status: true,
+                success: true,
                 bookings: message
             })
         }
 
         const bookings = await bookingsCollection.insertOne(booking);
         res.send({
-            status: true,
+            success: true,
             bookings: bookings
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             options: options
 
         })
@@ -203,35 +203,16 @@ app.get('/bookings', verifyJWT, async (req, res) => {
 
 
         res.send({
-            status: true,
+            success: true,
             bookings: bookings
         })
     } catch (error) {
 
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
 
-    }
-})
-
-// Delete: appointment from url
-app.delete('/bookings/:id', async (req, res) => {
-    try {
-        const id = req.params.id;
-        const query = { _id: ObjectId(id) };
-
-        const booking = await bookingsCollection.deleteOne(query);
-        res.send({
-            status: true,
-            booking: booking
-        })
-    } catch (error) {
-        res.send({
-            status: false,
-            error: error.message
-        })
     }
 })
 
@@ -243,13 +224,13 @@ app.get('/booking/:id', async (req, res) => {
         const booking = await bookingsCollection.findOne(query);
 
         res.send({
-            status: true,
+            success: true,
             booking: booking
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             options: options
 
         })
@@ -279,7 +260,7 @@ app.post('/create-payment-intent', async (req, res) => {
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
 
         })
@@ -297,13 +278,13 @@ app.post('/users', async (req, res) => {
 
         const users = await usersCollection.insertOne(user)
         res.send({
-            status: true,
+            success: true,
             users: users
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -322,14 +303,14 @@ app.get('/jwt', async (req, res) => {
             const token = jwt.sign({ email }, process.env.JWT_TOKEN_SECRET, { expiresIn: '7d' })
 
             return res.send({
-                status: true,
+                success: true,
                 token: token
             })
         }
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -342,13 +323,13 @@ app.get('/users', async (req, res) => {
         const query = {}
         const users = await usersCollection.find(query).toArray();
         res.send({
-            status: true,
+            success: true,
             users: users
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -371,14 +352,14 @@ app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
         const admin = await usersCollection.updateOne(filter, updateDoc, options)
 
         res.send({
-            status: true,
+            success: true,
             admin: admin
         })
 
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -396,7 +377,7 @@ app.get('/users/admin/:email', async (req, res) => {
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -409,14 +390,14 @@ app.get('/appointmentSpecialty', async (req, res) => {
         const query = {}
         const specialty = await AppointmentCollection.find(query).project({ name: 1 }).toArray()
         res.send({
-            status: true,
+            success: true,
             specialty: specialty
 
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -430,14 +411,14 @@ app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
         const doctors = await doctorCollection.insertOne(doctor)
 
         res.send({
-            status: true,
+            success: true,
             doctors: doctors
 
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -449,14 +430,14 @@ app.get('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
         const doctors = await doctorCollection.find(query).toArray()
 
         res.send({
-            status: true,
+            success: true,
             doctors: doctors
 
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
@@ -469,20 +450,17 @@ app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
         const doctor = await doctorCollection.deleteOne(query);
 
         res.send({
-            status: true,
+            success: true,
             doctor: doctor
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
 })
-
-
-
 
 // Header: payment
 app.post('/payments', async (req, res) => {
@@ -503,13 +481,13 @@ app.post('/payments', async (req, res) => {
         const updateResult = await bookingsCollection.updateOne(filter, updateDoc)
 
         res.send({
-            status: true,
+            success: true,
             payment: result,
         })
 
     } catch (error) {
         res.send({
-            status: false,
+            success: false,
             error: error.message
         })
     }
