@@ -85,7 +85,7 @@ const verifyAdmin = async (req, res, next) => {
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -131,14 +131,14 @@ app.get('/appOptions', async (req, res) => {
         })
 
         res.send({
-            success: true,
+            status: true,
             options: options
         })
 
     }
     catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -166,20 +166,20 @@ app.post('/bookings', async (req, res) => {
         if (alreadyBooked.length) {
             const message = `You already have a booking on ${ booking.appointmentDate }`;
             return res.send({
-                success: true,
+                status: true,
                 bookings: message
             })
         }
 
         const bookings = await bookingsCollection.insertOne(booking);
         res.send({
-            success: true,
+            status: true,
             bookings: bookings
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             options: options
 
         })
@@ -203,16 +203,34 @@ app.get('/bookings', verifyJWT, async (req, res) => {
 
 
         res.send({
-            success: true,
+            status: true,
             bookings: bookings
         })
     } catch (error) {
 
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
 
+    }
+})
+
+// Delete: appointment from url
+app.delete('/bookings/:id', verifyJWT, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const booking = await bookingsCollection.deleteOne(query);
+        res.send({
+            status: true,
+            booking: booking
+        })
+    } catch (error) {
+        res.send({
+            status: false,
+            error: error.message
+        })
     }
 })
 
@@ -224,13 +242,13 @@ app.get('/booking/:id', async (req, res) => {
         const booking = await bookingsCollection.findOne(query);
 
         res.send({
-            success: true,
+            status: true,
             booking: booking
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             options: options
 
         })
@@ -260,7 +278,7 @@ app.post('/create-payment-intent', async (req, res) => {
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
 
         })
@@ -278,13 +296,13 @@ app.post('/users', async (req, res) => {
 
         const users = await usersCollection.insertOne(user)
         res.send({
-            success: true,
+            status: true,
             users: users
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -303,14 +321,14 @@ app.get('/jwt', async (req, res) => {
             const token = jwt.sign({ email }, process.env.JWT_TOKEN_SECRET, { expiresIn: '7d' })
 
             return res.send({
-                success: true,
+                status: true,
                 token: token
             })
         }
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -323,13 +341,13 @@ app.get('/users', async (req, res) => {
         const query = {}
         const users = await usersCollection.find(query).toArray();
         res.send({
-            success: true,
+            status: true,
             users: users
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -352,32 +370,18 @@ app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
         const admin = await usersCollection.updateOne(filter, updateDoc, options)
 
         res.send({
-            success: true,
+            status: true,
             admin: admin
         })
 
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
 })
-
-// TODO: Add new Price elment to ===> Database =>
-// app.get('/addPrice', async (req, res) => {
-//     const filter = {}
-//     const options = { upsert: true }
-//     const updateDoc = {
-//         $set: {
-//             price: 500
-//         }
-//     }
-//     const result = await AppointmentCollection.updateMany(filter, updateDoc, options);
-//     res.send(result)
-// })
-
 
 
 // Link: Prevent accessing Admin route via URL
@@ -391,7 +395,7 @@ app.get('/users/admin/:email', async (req, res) => {
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -404,14 +408,14 @@ app.get('/appointmentSpecialty', async (req, res) => {
         const query = {}
         const specialty = await AppointmentCollection.find(query).project({ name: 1 }).toArray()
         res.send({
-            success: true,
+            status: true,
             specialty: specialty
 
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -425,14 +429,14 @@ app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
         const doctors = await doctorCollection.insertOne(doctor)
 
         res.send({
-            success: true,
+            status: true,
             doctors: doctors
 
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -444,14 +448,14 @@ app.get('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
         const doctors = await doctorCollection.find(query).toArray()
 
         res.send({
-            success: true,
+            status: true,
             doctors: doctors
 
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
@@ -464,17 +468,20 @@ app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
         const doctor = await doctorCollection.deleteOne(query);
 
         res.send({
-            success: true,
+            status: true,
             doctor: doctor
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
 })
+
+
+
 
 // Header: payment
 app.post('/payments', async (req, res) => {
@@ -495,13 +502,13 @@ app.post('/payments', async (req, res) => {
         const updateResult = await bookingsCollection.updateOne(filter, updateDoc)
 
         res.send({
-            success: true,
+            status: true,
             payment: result,
         })
 
     } catch (error) {
         res.send({
-            success: false,
+            status: false,
             error: error.message
         })
     }
